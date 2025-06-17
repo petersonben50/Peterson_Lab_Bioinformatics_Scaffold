@@ -1,0 +1,33 @@
+Bootstrap: docker
+From: alpine:3.20
+
+%post
+    apk update && \
+    apk add --no-cache coreutils && \
+    rm -rf /var/cache/apk/* /tmp/*
+
+%runscript
+    exec /usr/bin/md5sum "$@"
+
+%labels
+    Maintainer "Ben Peterson <petersob@uwm.edu>"
+    Version "1.0"
+    ReleaseDate "2025-06-16"
+    License "MIT"
+    Description "Peterson Lab Bioinformatic Scaffold - Minimal Apptainer container providing the md5sum utility from GNU coreutils."
+    Homepage "https://github.com/your-repo/md5sum-container"
+    Source "https://github.com/your-repo/md5sum-container/blob/main/md5sum_utility.def"
+
+%help
+    This container encapsulates the GNU md5sum utility for reliable and
+    reproducible checksum calculations.
+
+    Usage:
+      apptainer run <image.sif> [OPTIONS]... [FILE]...
+
+    Example:
+      apptainer run md5sum_utility.sif my_file.txt
+
+    For detailed usage and options, execute:
+      apptainer exec <image.sif> md5sum --help
+      apptainer exec <image.sif> man md5sum
