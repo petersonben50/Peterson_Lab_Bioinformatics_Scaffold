@@ -15,8 +15,8 @@ From: alpine:3.20
     ReleaseDate "2025-06-16"
     License "MIT"
     Description "Peterson Lab Bioinformatic Scaffold - Minimal Apptainer container providing the md5sum utility from GNU coreutils."
-    Homepage "https://github.com/your-repo/md5sum-container"
-    Source "https://github.com/your-repo/md5sum-container/blob/main/md5sum_utility.def"
+    Homepage "https://github.com/petersonben50/Peterson_Lab_Bioinformatics_Scaffold/"
+    Source "https://github.com/petersonben50/Peterson_Lab_Bioinformatics_Scaffold/blob/main/containers/md5sum_utility.def"
 
 %help
     This container encapsulates the GNU md5sum utility for reliable and
@@ -31,3 +31,4 @@ From: alpine:3.20
     For detailed usage and options, execute:
       apptainer exec <image.sif> md5sum --help
       apptainer exec <image.sif> man md5sum
+      
