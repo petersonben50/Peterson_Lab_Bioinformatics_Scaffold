@@ -1,0 +1,79 @@
+Bootstrap: docker
+From: condaforge/miniforge3:25.3.0-3 # Using AlmaLinux 9, a stable RHEL clone
+
+%environment
+    # Conda's base environment is typically already initialized in these images
+    # We explicitly set CONDA_HOME and ensure its bin is in PATH for clarity
+    export CONDA_HOME="/opt/conda" # Default install path for miniforge/miniconda images
+    export PATH="${CONDA_HOME}/bin:$PATH"
+    # Set LANG and LC_ALL to avoid locale warnings in some environments
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+
+%post
+    echo "--- Starting Apptainer build post-processing ---"
+
+    # Conda is already installed. Initialize base environment.
+    eval "$(conda shell.bash hook)" # This should now find conda
+    
+    # Activate base env if not already, to ensure `conda` commands work
+    conda activate base # Activate base env if not already, to ensure `conda` commands work
+
+    echo "Creating and installing fastp environment..."
+    conda create -n fastp_env -y fastp=1.0.1 mamba -c bioconda -c conda-forge
+
+    echo "Cleaning Conda cache to reduce container size..."
+    conda clean --all -f -y
+
+    echo "--- Apptainer build post-processing complete ---"
+
+
+%runscript
+    # This wrapper script ensures the fastp Conda environment is properly activated
+    # before executing fastp.
+    # It checks for conda.sh to ensure robustness.
+    if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
+        source "${CONDA_HOME}/etc/profile.d/conda.sh"
+    else
+        echo "Error: conda.sh not found. Conda environment might not be correctly set up."
+        exit 1
+    fi
+
+    # Activate the fastp environment
+    conda activate fastp_env
+
+    # Execute fastp with all arguments passed to the container
+    exec fastp "$@"
+
+
+
+%labels
+    Maintainer "Ben Peterson <petersob@uwm.edu>"
+    Version "1.0.1" # Matches the fastp version installed
+    ReleaseDate "2025-07-02" # Current date (updated to today)
+    License "MIT"
+    Description "Peterson Lab Bioinformatic Scaffold - Apptainer container for fastp, a high-performance FastQ preprocessor for QC, trimming, and filtering metagenomic reads."
+    Homepage "https://github.com/petersonben50/Peterson_Lab_Bioinformatics_Scaffold/"
+    Source "https://github.com/petersonben50/Peterson_Lab_Bioinformatics_Scaffold/blob/main/containers/fastp.def" # Placeholder, update with actual path
+
+%help
+    This container encapsulates the fastp utility for fast and efficient
+    quality control, adapter trimming, and filtering of metagenomic sequencing
+    reads (FASTQ format).
+
+    fastp automatically detects adapters, supports both single-end and
+    paired-end reads, and provides detailed JSON and HTML reports.
+
+    Usage:
+      apptainer run <image.sif> [fastp_options]
+
+    Example:
+      apptainer run fastp.sif -i raw_R1.fastq.gz -o trimmed_R1.fastq.gz \
+        -I raw_R2.fastq.gz -O trimmed_R2.fastq.gz \
+        -j report.json -h report.html
+
+    For detailed usage and available options, execute:
+      apptainer exec <image.sif> fastp --help
+
+    This container is part of the Peterson Lab Bioinformatics Scaffold (PLBS)
+    designed for reproducible and traceable bioinformatics analyses.
