@@ -1,0 +1,111 @@
+Bootstrap: docker
+From: condaforge/miniforge3:25.3.0-3 # Using AlmaLinux 9, a stable RHEL clone
+
+%environment
+    # We explicitly set CONDA_HOME to ensure its bin is in PATH for clarity
+    export CONDA_HOME="/opt/conda" # Default install path for miniforge/miniconda images
+    export PATH="${CONDA_HOME}/bin:$PATH"
+    # Set LANG and LC_ALL to avoid locale warnings in some environments
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+
+%post
+    echo "--- Starting Apptainer build post-processing ---"
+
+    # Conda is already installed. Initialize base environment.
+    # The `eval` is crucial for conda commands to be recognized
+    eval "$(conda shell.bash hook)"
+    
+    # Activate base env if not already, to ensure `conda` commands work
+    conda activate base
+
+    echo "Creating and installing SPAdes environment..."
+    # Install spades, which includes metaSPAdes functionality.
+    # Use mamba for faster dependency resolution.
+    conda create -n spades_env -y spades=4.2.0 mamba -c bioconda -c conda-forge
+
+    echo "Cleaning Conda cache to reduce container size..."
+    conda clean --all -f -y
+
+    echo "--- Apptainer build post-processing complete ---"
+
+%files
+    # This section is currently empty.
+    # Files added here would be copied from the host into the container.
+    # Example: /path/to/host/script.sh /opt/container/script.sh
+
+%runscript
+    # This wrapper script ensures the SPAdes Conda environment is properly activated
+    # before executing spades.py.
+    # It checks for conda.sh to ensure robustness.
+    if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
+        . "${CONDA_HOME}/etc/profile.d/conda.sh"
+    else
+        echo "Error: conda.sh not found. Conda environment might not be correctly set up."
+        exit 1
+    fi
+
+    # Activate the spades environment
+    conda activate spades_env
+
+    # Execute spades.py with all arguments passed to the container.
+    # spades.py is the primary entry point for all SPAdes modes, including metaSPAdes.
+    exec spades.py "$@"
+
+%test
+    echo "--- Starting Apptainer container tests ---"
+    # Ensure conda is initialized to activate the environment
+    if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
+        . "${CONDA_HOME}/etc/profile.d/conda.sh"
+    else
+        echo "Error: conda.sh not found. Conda environment might not be correctly set up for testing."
+        exit 1
+    fi
+
+    # Activate the spades environment for testing
+    conda activate spades_env
+
+    # Test that spades.py can be found and executes with --version
+    echo "Running spades.py --version test..."
+    if spades.py --version &> /dev/null; then
+        echo "spades.py --version command successful."
+    else
+        echo "Error: spades.py --version command failed."
+        exit 1
+    fi
+
+    echo "--- Apptainer container tests complete ---"
+
+%labels
+    Maintainer "Ben Peterson <petersob@uwm.edu>"
+    Version "4.2.0" # Matches the SPAdes version installed
+    ReleaseDate "2025-07-13" # Current date
+    License "GPLv2" # SPAdes is typically GPLv2 licensed
+    Description "Peterson Lab Bioinformatic Scaffold - Apptainer container for SPAdes, a genome assembler for single-cell, standard, and metagenomic data (includes metaSPAdes functionality)."
+    Homepage "https://cab.spbu.ru/software/spades/"
+    Source "https://github.com/petersonben50/Peterson_Lab_Bioinformatics_Scaffold/blob/main/containers/spades.def" # Placeholder, update with actual path
+
+%help
+    This container encapsulates the SPAdes genome assembler, which is designed
+    for de novo assembly of reads from various sequencing platforms.
+    It supports:
+    - Standard genome assembly
+    - Single-cell genome assembly
+    - Plasmid assembly
+    - And crucially for metagenomics: **metaSPAdes**
+
+    metaSPAdes is a specific pipeline within the SPAdes toolkit, optimized for
+    assembling metagenomic datasets, aiming to recover individual genomes from
+    complex microbial communities.
+
+    Usage:
+      apptainer run <image.sif> [spades.py_options]
+
+    To run metaSPAdes, you typically use the '--meta' flag with spades.py:
+      apptainer run spades.sif --meta -1 reads_1.fastq -2 reads_2.fastq -o spades_output_dir
+
+    For detailed usage and available options, execute:
+      apptainer exec <image.sif> spades.py --help
+
+    This container is part of the Peterson Lab Bioinformatics Scaffold (PLBS)
+    designed for reproducible and traceable bioinformatics analyses.
