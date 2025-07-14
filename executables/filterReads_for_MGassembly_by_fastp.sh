@@ -74,12 +74,9 @@ fi
 #------------------------------------------------------------------------------#
 #                           2. PLBS Path Construction & Validation             #
 #------------------------------------------------------------------------------#
-# The output directory for this sample's fastp results.
-# Derived from one of the output files to ensure consistency.
-OUTPUT_SAMPLE_DIR="$(dirname "${TRIMMED_R1}")"
-
-# Ensure output directory exists on the host
-mkdir -p "${OUTPUT_SAMPLE_DIR}" || { echo "Error: Could not create output directory ${OUTPUT_SAMPLE_DIR}"; exit 1; }
+# The input directory for input reads.
+# Derived from the first input read file to ensure consistency.
+INPUT_DIR="$(dirname "${INPUT_READ1}")"
 
 # Validate input files exist
 if [ ! -f "${INPUT_READ1}" ]; then
@@ -90,6 +87,14 @@ if [ ! -f "${INPUT_READ2}" ]; then
     echo "Error: Input read 2 file does not exist: ${INPUT_READ2}"
     exit 1
 fi
+
+# The output directory for this sample's fastp results.
+# Derived from one of the output files to ensure consistency.
+OUTPUT_SAMPLE_DIR="$(dirname "${TRIMMED_R1}")"
+
+# Ensure output directory exists on the host
+mkdir -p "${OUTPUT_SAMPLE_DIR}" || { echo "Error: Could not create output directory ${OUTPUT_SAMPLE_DIR}"; exit 1; }
+
 
 #------------------------------------------------------------------------------#
 #                           3. Logging & Pre-execution Checks                  #
@@ -111,33 +116,40 @@ echo "----------------------------------------------------------------"
 # All paths are relative to the container's bind mounts (/data/input_dir, /data/output_dir).
 # Note: Double quotes are escaped with backslashes for the inner bash -c command.
 # Also, we now bind the specific input read files, not just their directory.
-FASTP_COMMAND_STRING="fastp \\
-    --in1 \"/data/input_read1/$(basename \"${INPUT_READ1}\")\" \\
-    --in2 \"/data/input_read2/$(basename \"${INPUT_READ2}\")\" \\
-    --out1 \"/data/output_dir/$(basename \"${TRIMMED_R1}\")\" \\
-    --out2 \"/data/output_dir/$(basename \"${TRIMMED_R2}\")\" \\
-    $( [ -n "${TRIMMED_UNPAIRED1}" ] && echo "--unpaired1 \"/data/output_dir/$(basename \"${TRIMMED_UNPAIRED1}\")\"" ) \\
-    $( [ -n "${TRIMMED_UNPAIRED2}" ] && echo "--unpaired2 \"/data/output_dir/$(basename \"${TRIMMED_UNPAIRED2}\")\"" ) \\
-    $( [ -n "${TRIMMED_MERGED}" ] && echo "--merge --merged_out \"/data/output_dir/$(basename \"${TRIMMED_MERGED}\")\"" ) \\
-    $( [ -n "${FAILED_READS}" ] && echo "--failed_out \"/data/output_dir/$(basename \"${FAILED_READS}\")\"" ) \\
-    --json \"/data/output_dir/$(basename \"${FASTP_JSON_REPORT}\")\" \\
-    --html \"/data/output_dir/$(basename \"${FASTP_HTML_REPORT}\")\" \\
-    --thread \"${NUM_THREADS}\" \\
-    --detect_adapter_for_pe \\
-    --cut_front \\
-    --cut_tail \\
-    --cut_tail_window_size 10 \\
-    --cut_tail_mean_quality 20 \\
-    --length_required 100 \\
-    --trim_poly_g \\
-    --trim_poly_x"
+FASTP_COMMAND_STRING="fastp"
+FASTP_COMMAND_STRING+=" --in1 \"/data/input_dir/$(basename "${INPUT_READ1}")\""
+FASTP_COMMAND_STRING+=" --in2 \"/data/input_dir/$(basename "${INPUT_READ2}")\""
+FASTP_COMMAND_STRING+=" --out1 \"/data/output_dir/$(basename "${TRIMMED_R1}")\""
+FASTP_COMMAND_STRING+=" --out2 \"/data/output_dir/$(basename "${TRIMMED_R2}")\""
+if [ -n "${TRIMMED_UNPAIRED1}" ]; then
+  FASTP_COMMAND_STRING+=" --unpaired1 \"/data/output_dir/$(basename "${TRIMMED_UNPAIRED1}")\""
+fi
+if [ -n "${TRIMMED_UNPAIRED2}" ]; then
+  FASTP_COMMAND_STRING+=" --unpaired2 \"/data/output_dir/$(basename "${TRIMMED_UNPAIRED2}")\""
+fi
+if [ -n "${TRIMMED_MERGED}" ]; then
+  FASTP_COMMAND_STRING+=" --merge --merged_out \"/data/output_dir/$(basename "${TRIMMED_MERGED}")\""
+fi
+if [ -n "${FAILED_READS}" ]; then
+  FASTP_COMMAND_STRING+=" --failed_out \"/data/output_dir/$(basename "${FAILED_READS}")\""
+fi
+FASTP_COMMAND_STRING+=" --json \"/data/output_dir/$(basename "${FASTP_JSON_REPORT}")\""
+FASTP_COMMAND_STRING+=" --html \"/data/output_dir/$(basename "${FASTP_HTML_REPORT}")\""
+FASTP_COMMAND_STRING+=" --thread ${NUM_THREADS}"
+FASTP_COMMAND_STRING+=" --detect_adapter_for_pe"
+FASTP_COMMAND_STRING+=" --cut_front"
+FASTP_COMMAND_STRING+=" --cut_tail"
+FASTP_COMMAND_STRING+=" --cut_tail_window_size 10"
+FASTP_COMMAND_STRING+=" --cut_tail_mean_quality 20"
+FASTP_COMMAND_STRING+=" --length_required 100"
+FASTP_COMMAND_STRING+=" --trim_poly_g"
+FASTP_COMMAND_STRING+=" --trim_poly_x"
 
 # Execute fastp inside the Apptainer container using bash -c for Conda activation.
 # Bind mounts ensure data is accessible within the container.
 # We bind individual input files for clarity and explicit access.
 apptainer exec \
-    --bind "${INPUT_READ1}":/data/input_read1:ro \
-    --bind "${INPUT_READ2}":/data/input_read2:ro \
+    --bind "${INPUT_DIR}":/data/input_dir:ro \
     --bind "${OUTPUT_SAMPLE_DIR}":/data/output_dir \
     "${FASTP_CONTAINER}" \
     bash -c " \
