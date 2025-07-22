@@ -85,13 +85,12 @@ def run_metaspades(
     logger.info(f"Using k-mers: {validated_kmers_str}")
 
     # Construct the full output path
-    spades_output_path = os.path.join(output_dir, f"{assembly_name}_spades_output")
-    os.makedirs(spades_output_path, exist_ok=True)
-    logger.info(f"SPAdes output will be written to: {spades_output_path}")
+    os.makedirs(output_dir, exist_ok=True)
+    logger.info(f"SPAdes output will be written to: {output_dir}")
 
     # Start building the command
     cmd = ["spades.py", "--meta"] # Always use --meta for metaSPAdes mode
-    cmd.extend(["-o", spades_output_path])
+    cmd.extend(["-o", output_dir])
     cmd.extend(["-t", str(threads)])
 
     # Add memory limit if provided
