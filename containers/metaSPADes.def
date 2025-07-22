@@ -8,6 +8,7 @@ From: condaforge/miniforge3:25.3.0-3 # Using AlmaLinux 9, a stable RHEL clone
     # Set LANG and LC_ALL to avoid locale warnings in some environments
     export LANG=C.UTF-8
     export LC_ALL=C.UTF-8
+    export PATH="/opt/conda/envs/spades_env/bin/:$PATH"
 
 %post
     echo "--- Starting Apptainer build post-processing ---"
