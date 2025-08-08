@@ -1,0 +1,97 @@
+Bootstrap: docker
+From: condaforge/miniforge3:25.3.0-3
+
+%environment
+    export CONDA_HOME="/opt/conda"
+    export PATH="${CONDA_HOME}/bin:$PATH"
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    export PATH="/opt/conda/envs/bowtie2_env/bin/:$PATH"
+
+%post
+    echo "--- Starting Apptainer build post-processing ---"
+
+    eval "$(conda shell.bash hook)"
+    conda activate base
+
+    echo "Creating and installing Bowtie2 environment..."
+    conda create -n bowtie2_env -y bowtie2=2.5.4 mamba -c bioconda -c conda-forge
+
+    echo "Cleaning Conda cache to reduce container size..."
+    conda clean --all -f -y
+
+    echo "--- Apptainer build post-processing complete ---"
+
+%files
+    # This section is currently empty.
+    # Files added here would be copied from the host into the container.
+
+%runscript
+    if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
+        . "${CONDA_HOME}/etc/profile.d/conda.sh"
+    else
+        echo "Error: conda.sh not found. Conda environment might not be correctly set up."
+        exit 1
+    fi
+
+    conda activate bowtie2_env
+
+    # Bowtie2 has a few executables. We will run the main `bowtie2` command.
+    # Users can access other commands like `bowtie2-build` via `apptainer exec`.
+    exec bowtie2 "$@"
+
+%test
+    echo "--- Starting Apptainer container tests ---"
+    if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
+        . "${CONDA_HOME}/etc/profile.d/conda.sh"
+    else
+        echo "Error: conda.sh not found. Conda environment might not be correctly set up for testing."
+        exit 1
+    fi
+
+    conda activate bowtie2_env
+
+    echo "Running bowtie2 --version test..."
+    if bowtie2 --version &> /dev/null; then
+        echo "bowtie2 --version command successful."
+    else
+        echo "Error: bowtie2 --version command failed."
+        exit 1
+    fi
+
+    echo "--- Apptainer container tests complete ---"
+
+%labels
+    Maintainer "Ben Peterson <petersob@uwm.edu>"
+    Version "2.5.4"
+    ReleaseDate "2025-08-08"
+    License "GPLv3"
+    Description "Peterson Lab Bioinformatic Scaffold - Apptainer container for Bowtie2, an ultrafast and memory-efficient tool for aligning sequencing reads to long reference sequences."
+    Homepage "http://bowtie-bio.sourceforge.net/bowtie2/"
+    Source "https://github.com/petersonben50/Peterson_Lab_Bioinformatics_Scaffold/blob/main/containers/bowtie2.def"
+
+%help
+    This container encapsulates the Bowtie2 alignment tool, which is widely
+    used for mapping sequencing reads to a reference genome. It is particularly
+    useful for tasks like metagenome mapping, where you align reads from a
+    microbial community to a database of known genomes.
+
+    Key features of Bowtie2:
+    - Supports gapped, local, and paired-end alignment.
+    - Highly memory-efficient.
+    - Fast and accurate.
+
+    Usage:
+      apptainer run <image.sif> [bowtie2_options]
+
+    Example usage for aligning paired-end reads to an index:
+      apptainer run bowtie2.sif -x my_reference_index -1 reads_1.fastq -2 reads_2.fastq -S aligned_reads.sam
+
+    To build an index with bowtie2-build (requires `apptainer exec`):
+      apptainer exec <image.sif> bowtie2-build reference.fasta my_reference_index
+
+    For detailed usage and available options, execute:
+      apptainer exec <image.sif> bowtie2 --help
+
+    This container is part of the Peterson Lab Bioinformatics Scaffold (PLBS)
+    designed for reproducible and traceable bioinformatics analyses.
