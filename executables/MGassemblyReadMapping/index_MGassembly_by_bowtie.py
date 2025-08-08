@@ -29,6 +29,9 @@ def run_bowtie_indexing(
     if not input_assembly:
         logger.error("Error: Assembly input is mandatory.")
         sys.exit(1)    
+    if not output_index_name:
+        logger.error("Error: Output index name is mandatory.")
+        sys.exit(1)  
     if not output_dir:
         logger.error("Error: Output location is mandatory.")
         sys.exit(1)
@@ -74,7 +77,7 @@ def main():
         required=True,
         help="Path to assembly file to be indexed.\n"
              "Required.\n"
-             "Example: --r1 assemblyID_assembly.fna"
+             "Example: --input-assembly assemblyID_assembly.fna"
     )
     parser.add_argument(
         "--output-name",
