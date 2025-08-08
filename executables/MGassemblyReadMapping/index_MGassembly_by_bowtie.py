@@ -41,7 +41,7 @@ def run_bowtie_indexing(
     logger.info(f"Index output will be written to: {output_dir}")
 
     # Add output file name to output path
-    output_path = output_dir + output_index_name + "_bowtie2_index"
+    output_path = os.path.join(output_dir, f"{output_index_name}_bowtie2_index")
 
     # Start building the command
     cmd = ["bowtie2-build"]
