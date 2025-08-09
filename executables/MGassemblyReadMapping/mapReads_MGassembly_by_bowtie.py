@@ -273,6 +273,7 @@ def main():
 
     # Pass the arguments to the main function
     run_mapping(
+        index_prefix=os.path.join(args.output_dir, f"{args.assembly_name}_bowtie2_index"),
         r1_reads=args.r1,
         r2_reads=args.r2,
         single_reads=args.single,
