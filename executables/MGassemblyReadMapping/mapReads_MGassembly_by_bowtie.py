@@ -170,7 +170,9 @@ def samtools_sort(
     sorted_bam_file = os.path.join(output_dir, f"{metagenome_name}_to_{assembly_name}_bowtie2.bam")
 
     # Set up the samtools sort command
-    cmd = ["samtools", "sort", bam_file, "-o", sorted_bam_file]
+    cmd = ["samtools", "sort"]
+    cmd.extend(["-@", str(threads)])
+    cmd.extend([bam_file, "-o", sorted_bam_file])
 
     logger.info(f"Sorting BAM file {bam_file} to {sorted_bam_file}: {' '.join(cmd)}")
 
