@@ -6,7 +6,7 @@ From: condaforge/miniforge3:25.3.0-3
     export PATH="${CONDA_HOME}/bin:$PATH"
     export LANG=C.UTF-8
     export LC_ALL=C.UTF-8
-    export PATH="/opt/conda/envs/bowtie2_env/bin/:$PATH"
+    export PATH="/opt/conda/envs/bowtie_samtools_env/bin/:$PATH"
 
 %post
     echo "--- Starting Apptainer build post-processing ---"
@@ -14,8 +14,8 @@ From: condaforge/miniforge3:25.3.0-3
     eval "$(conda shell.bash hook)"
     conda activate base
 
-    echo "Creating and installing Bowtie2 environment..."
-    conda create -n bowtie2_env -y bowtie2=2.5.4 mamba -c bioconda -c conda-forge
+    echo "Creating and installing Bowtie2 and Samtools environment..."
+    conda create -n bowtie_samtools_env -y bowtie2=2.5.4 samtools=1.22.1 mamba -c bioconda -c conda-forge
 
     echo "Cleaning Conda cache to reduce container size..."
     conda clean --all -f -y
@@ -34,11 +34,18 @@ From: condaforge/miniforge3:25.3.0-3
         exit 1
     fi
 
-    conda activate bowtie2_env
+    conda activate bowtie_samtools_env
 
-    # Bowtie2 has a few executables. We will run the main `bowtie2` command.
-    # Users can access other commands like `bowtie2-build` via `apptainer exec`.
-    exec bowtie2 "$@"
+    # This container supports multiple tools. Provide a helpful message if no command is given.
+    if [ "$#" -eq 0 ]; then
+        echo "This container includes Bowtie2 and Samtools."
+        echo "Please specify a command to run, e.g., 'bowtie2' or 'samtools'."
+        echo "For help, use 'apptainer exec <image.sif> <command> --help'."
+        exit 1
+    fi
+
+    # Execute the specified command with all its arguments.
+    exec "$@"
 
 %test
     echo "--- Starting Apptainer container tests ---"
@@ -49,7 +56,7 @@ From: condaforge/miniforge3:25.3.0-3
         exit 1
     fi
 
-    conda activate bowtie2_env
+    conda activate bowtie_samtools_env
 
     echo "Running bowtie2 --version test..."
     if bowtie2 --version &> /dev/null; then
@@ -59,39 +66,44 @@ From: condaforge/miniforge3:25.3.0-3
         exit 1
     fi
 
+    echo "Running samtools --version test..."
+    if samtools --version &> /dev/null; then
+        echo "samtools --version command successful."
+    else
+        echo "Error: samtools --version command failed."
+        exit 1
+    fi
+
     echo "--- Apptainer container tests complete ---"
 
 %labels
     Maintainer "Ben Peterson <petersob@uwm.edu>"
-    Version "2.5.4"
+    Version "2.5.2 (Bowtie2), 1.20 (Samtools)"
     ReleaseDate "2025-08-08"
-    License "GPLv3"
-    Description "Peterson Lab Bioinformatic Scaffold - Apptainer container for Bowtie2, an ultrafast and memory-efficient tool for aligning sequencing reads to long reference sequences."
+    License "GPLv3 (Bowtie2), MIT (Samtools)"
+    Description "Peterson Lab Bioinformatic Scaffold - Apptainer container for Bowtie2 and Samtools, commonly used together for read alignment and downstream processing."
     Homepage "http://bowtie-bio.sourceforge.net/bowtie2/"
-    Source "https://github.com/petersonben50/Peterson_Lab_Bioinformatics_Scaffold/blob/main/containers/bowtie2.def"
+    Source "https://github.com/petersonben50/Peterson_Lab_Bioinformatics_Scaffold/blob/main/containers/bowtie_samtools.def"
 
 %help
-    This container encapsulates the Bowtie2 alignment tool, which is widely
-    used for mapping sequencing reads to a reference genome. It is particularly
-    useful for tasks like metagenome mapping, where you align reads from a
-    microbial community to a database of known genomes.
-
-    Key features of Bowtie2:
-    - Supports gapped, local, and paired-end alignment.
-    - Highly memory-efficient.
-    - Fast and accurate.
+    This container encapsulates Bowtie2 for read alignment and Samtools for
+    manipulating Sequence Alignment/Map (SAM) and Binary Alignment/Map (BAM)
+    files. This combination is ideal for a full read mapping workflow, from
+    alignment to sorting, indexing, and format conversion.
 
     Usage:
-      apptainer run <image.sif> [bowtie2_options]
+      To run Bowtie2:
+        apptainer exec <image.sif> bowtie2 [bowtie2_options]
+      To run Samtools:
+        apptainer exec <image.sif> samtools [samtools_options]
 
-    Example usage for aligning paired-end reads to an index:
-      apptainer run bowtie2.sif -x my_reference_index -1 reads_1.fastq -2 reads_2.fastq -S aligned_reads.sam
-
-    To build an index with bowtie2-build (requires `apptainer exec`):
-      apptainer exec <image.sif> bowtie2-build reference.fasta my_reference_index
-
-    For detailed usage and available options, execute:
-      apptainer exec <image.sif> bowtie2 --help
+    Example workflow:
+    1. Align reads with Bowtie2 and output to SAM:
+       apptainer exec <image.sif> bowtie2 -x ref_index -1 reads_1.fq.gz -2 reads_2.fq.gz -S aligned.sam
+    2. Convert SAM to BAM and sort the result with Samtools:
+       apptainer exec <image.sif> samtools view -bS aligned.sam | samtools sort -o aligned.sorted.bam -
+    3. Index the sorted BAM file:
+       apptainer exec <image.sif> samtools index aligned.sorted.bam
 
     This container is part of the Peterson Lab Bioinformatics Scaffold (PLBS)
     designed for reproducible and traceable bioinformatics analyses.
