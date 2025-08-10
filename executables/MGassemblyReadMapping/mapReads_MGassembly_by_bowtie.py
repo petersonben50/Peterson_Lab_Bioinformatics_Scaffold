@@ -143,7 +143,8 @@ def samtools_view(
 def samtools_sort(
     output_dir: str = None,
     assembly_name: str = None,
-    metagenome_name: str = None
+    metagenome_name: str = None,
+    threads: int = 1
     ):
     """
     Sorts the BAM file using samtools.
@@ -300,7 +301,8 @@ def main():
     samtools_sort(
         output_dir=args.output_dir,
         assembly_name=args.assembly_name,
-        metagenome_name=args.metagenome_name
+        metagenome_name=args.metagenome_name,
+        threads=args.threads
     )
     samtools_index(
         output_dir=args.output_dir,
