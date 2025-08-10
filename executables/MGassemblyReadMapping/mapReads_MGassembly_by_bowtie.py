@@ -140,6 +140,21 @@ def samtools_view(
     
     logger.info(f"Converting SAM file {sam_file} to BAM format at {bam_file}: {' '.join(cmd)}")
 
+    try:
+        subprocess.run(cmd, check=True, text=True, capture_output=False)
+        logger.info("SAM to BAM conversion completed successfully.")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"SAM to BAM conversion command failed with exit code {e.returncode}")
+        logger.error(f"Command: {e.cmd}")
+        sys.exit(e.returncode)
+    except FileNotFoundError:
+        logger.error("Error: 'samtools' command not found. "
+                     "Ensure samtools is installed and in your PATH within the container.")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
+        sys.exit(1)
+
 def samtools_sort(
     output_dir: str = None,
     assembly_name: str = None,
@@ -180,6 +195,22 @@ def samtools_sort(
 
     logger.info(f"Sorting BAM file {bam_file} to {sorted_bam_file}: {' '.join(cmd)}")
 
+    try:
+        subprocess.run(cmd, check=True, text=True, capture_output=False)
+        logger.info("BAM sorting completed successfully.")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"BAM sorting command failed with exit code {e.returncode}")
+        logger.error(f"Command: {e.cmd}")
+        sys.exit(e.returncode)
+    except FileNotFoundError:
+        logger.error("Error: 'samtools' command not found. "
+                     "Ensure samtools is installed and in your PATH within the container.")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
+        sys.exit(1)
+
+
 def samtools_index(
     output_dir: str = None,
     assembly_name: str = None,
@@ -214,6 +245,21 @@ def samtools_index(
     cmd = ["samtools", "index", sorted_bam_file]
 
     logger.info(f"Indexing BAM file {sorted_bam_file}: {' '.join(cmd)}")
+
+    try:
+        subprocess.run(cmd, check=True, text=True, capture_output=False)
+        logger.info("BAM indexing completed successfully.")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"BAM indexing command failed with exit code {e.returncode}")
+        logger.error(f"Command: {e.cmd}")
+        sys.exit(e.returncode)
+    except FileNotFoundError:
+        logger.error("Error: 'samtools' command not found. "
+                     "Ensure samtools is installed and in your PATH within the container.")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
+        sys.exit(1)
 
 
 def main():
