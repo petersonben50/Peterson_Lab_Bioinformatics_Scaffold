@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(m
 logger = logging.getLogger(__name__)
 
 def run_mapping(
-    index_prefix: str = None,
+    bowtie2_index_folder: str = None,
     r1_reads: list = None,
     r2_reads: list = None,
     single_reads: list = None,
@@ -23,7 +23,7 @@ def run_mapping(
     Constructs and executes the bowtie2 command.
 
     Args:
-        index_prefix (str): Prefix for the index files. (Required)
+        bowtie2_index_folder (str): Directory for bowtie2 index files. (Required)
         r1_reads (list): List of paths to R1 paired-end FASTQ files. (Required)
         r2_reads (list): List of paths to R2 paired-end FASTQ files. (Required)
         single_reads (list, optional): List of paths to single-end FASTQ files.
@@ -37,8 +37,8 @@ def run_mapping(
     """
 
     # --- Input Validation (existing) ---
-    if not index_prefix:
-        logger.error("Error: Index location and name is mandatory.")
+    if not bowtie2_index_folder:
+        logger.error("Error: Index location is mandatory.")
         sys.exit(1)
     if not r1_reads or not r2_reads:
         logger.error("Error: Paired-end R1 and R2 reads are mandatory.")
@@ -62,6 +62,9 @@ def run_mapping(
     # Construct the full output path
     os.makedirs(output_dir, exist_ok=True)
     logger.info(f"Mapping output will be written to: {output_dir}")
+
+    # Construct the full index prefix path
+    index_prefix = os.path.join(bowtie2_index_folder, f"{assembly_name}_bowtie2_index")
 
     # Start building the command
     cmd = ["bowtie2"]
@@ -219,6 +222,12 @@ def main():
     )
 
     parser.add_argument(
+        "--bowtie2_index_folder",
+        required=True,
+        help="Directory where bowtie2 index files are located. Required.\n"
+             "Example: --bowtie2_index_folder /path/to/index_directory"
+    )
+    parser.add_argument(
         "--r1",
         nargs='+', # Allows multiple R1 files
         required=True,
@@ -273,7 +282,7 @@ def main():
 
     # Pass the arguments to the main function
     run_mapping(
-        index_prefix=os.path.join(args.output_dir, f"{args.assembly_name}_bowtie2_index"),
+        bowtie2_index_folder=args.bowtie2_index_folder,
         r1_reads=args.r1,
         r2_reads=args.r2,
         single_reads=args.single,
