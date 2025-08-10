@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 def run_mapping(
     index_prefix: str = None,
-    r1_reads: list,
-    r2_reads: list,
+    r1_reads: list = None,
+    r2_reads: list = None,
     single_reads: list = None,
     output_dir: str = None,
     assembly_name: str = None,
