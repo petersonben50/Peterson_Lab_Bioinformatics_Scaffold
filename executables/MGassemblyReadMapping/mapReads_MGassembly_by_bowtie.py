@@ -17,7 +17,7 @@ def run_mapping(
     output_dir: str = None,
     assembly_name: str = None,
     metagenome_name: str = None,
-    threads: int = None,
+    threads: int = None
 ):
     """
     Constructs and executes the bowtie2 command.
@@ -103,7 +103,7 @@ def run_mapping(
 def samtools_view(
     output_dir: str = None,
     assembly_name: str = None,
-    metagenome_name: str = None,
+    metagenome_name: str = None
     ):
     """
     Converts the SAM file to BAM format using samtools.
@@ -140,7 +140,7 @@ def samtools_view(
 def samtools_sort(
     output_dir: str = None,
     assembly_name: str = None,
-    metagenome_name: str = None,
+    metagenome_name: str = None
     ):
     """
     Sorts the BAM file using samtools.
@@ -179,7 +179,7 @@ def samtools_sort(
 def samtools_index(
     output_dir: str = None,
     assembly_name: str = None,
-    metagenome_name: str = None,
+    metagenome_name: str = None
     ):
     """
     Indexes the sorted BAM file using samtools.
@@ -280,23 +280,23 @@ def main():
         output_dir=args.output_dir,
         assembly_name=args.assembly_name,
         metagenome_name=args.metagenome_name,
-        threads=args.threads,
+        threads=args.threads
     )
     # Call samtools functions
     samtools_view(
         output_dir=args.output_dir,
         assembly_name=args.assembly_name,
-        metagenome_name=args.metagenome_name,
+        metagenome_name=args.metagenome_name
     )
     samtools_sort(
         output_dir=args.output_dir,
         assembly_name=args.assembly_name,
-        metagenome_name=args.metagenome_name,
+        metagenome_name=args.metagenome_name
     )
     samtools_index(
         output_dir=args.output_dir,
         assembly_name=args.assembly_name,
-        metagenome_name=args.metagenome_name,
+        metagenome_name=args.metagenome_name
     )
 
 
