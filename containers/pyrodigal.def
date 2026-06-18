@@ -1,0 +1,120 @@
+Bootstrap: docker
+From: condaforge/miniforge3:25.3.0-3 # Using AlmaLinux 9, a stable RHEL clone
+
+%environment
+    # We explicitly set CONDA_HOME to ensure its bin is in PATH for clarity
+    export CONDA_HOME="/opt/conda" # Default install path for miniforge/miniconda images
+    export PATH="${CONDA_HOME}/bin:$PATH"
+    # Set LANG and LC_ALL to avoid locale warnings in some environments
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    export PATH="/opt/conda/envs/pyrodigal_env/bin/:$PATH"
+
+%post
+    echo "--- Starting Apptainer build post-processing ---"
+
+    # Conda is already installed. Initialize base environment.
+    # The `eval` is crucial for conda commands to be recognized
+    eval "$(conda shell.bash hook)"
+    
+    # Activate base env if not already, to ensure `conda` commands work
+    conda activate base
+
+    echo "Creating and installing Pyrodigal environment..."
+    # Install Pyrodigal, a fast and actively maintained Rust/Python reimplementation of Prodigal
+    # for identifying open reading frames (ORFs). Pyrodigal produces identical output to Prodigal.
+    # Use mamba for faster dependency resolution.
+    conda create -n pyrodigal_env -y pyrodigal=3.7.1 mamba -c bioconda -c conda-forge
+
+    echo "Cleaning Conda cache to reduce container size..."
+    conda clean --all -f -y
+
+    echo "--- Apptainer build post-processing complete ---"
+
+%files
+    # This section is currently empty.
+    # Files added here would be copied from the host into the container.
+    # Example: /path/to/host/script.sh /opt/container/script.sh
+
+%runscript
+    # This wrapper script ensures the Pyrodigal Conda environment is properly activated
+    # before executing prodigal (via pyrodigal).
+    # It checks for conda.sh to ensure robustness.
+    if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
+        . "${CONDA_HOME}/etc/profile.d/conda.sh"
+    else
+        echo "Error: conda.sh not found. Conda environment might not be correctly set up."
+        exit 1
+    fi
+
+    # Activate the pyrodigal environment
+    conda activate pyrodigal_env
+
+    # Execute pyrodigal with all arguments passed to the container.
+    exec pyrodigal "$@"
+
+%test
+    echo "--- Starting Apptainer container tests ---"
+    # Ensure conda is initialized to activate the environment
+    if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
+        . "${CONDA_HOME}/etc/profile.d/conda.sh"
+    else
+        echo "Error: conda.sh not found. Conda environment might not be correctly set up for testing."
+        exit 1
+    fi
+
+    # Activate the pyrodigal environment for testing
+    conda activate pyrodigal_env
+
+    # Test that pyrodigal can be found and executes with --version
+    echo "Running pyrodigal --version test..."
+    if pyrodigal -v &> /dev/null; then
+        echo "pyrodigal --version command successful."
+    else
+        echo "Error: pyrodigal --version command failed."
+        exit 1
+    fi
+
+    echo "--- Apptainer container tests complete ---"
+
+%labels
+    Maintainer "Ben Peterson <petersob@uwm.edu>"
+    Version "3.7.1" # Matches the Pyrodigal version installed
+    ReleaseDate "2026-06-18" # Current date
+    License "MIT" # Pyrodigal is MIT licensed
+    Description "Peterson Lab Bioinformatic Scaffold - Apptainer container for Pyrodigal, an actively maintained Rust/Python reimplementation of the Prodigal gene predictor for identifying open reading frames (ORFs) in genomic and metagenomic sequences."
+    Homepage "https://pyrodigal.readthedocs.io/en/stable/"
+    Source "https://github.com/petersonben50/Peterson_Lab_Bioinformatics_Scaffold/blob/main/containers/pyrodigal.def" # Placeholder, update with actual path
+
+%help
+    This container encapsulates Pyrodigal, an actively maintained Rust/Python
+    reimplementation of Prodigal for fast and reliable protein-coding gene
+    prediction in prokaryotic genomes and metagenomic sequences. Pyrodigal
+    produces identical output to Prodigal but with significantly improved speed.
+
+    Key features:
+    - Gene prediction for prokaryotic genomes
+    - Support for metagenomic sequences
+    - Fast and accurate ORF identification (faster than original Prodigal)
+    - Codon usage-based predictions
+    - Fully compatible with Prodigal output formats
+    - Actively maintained (MIT licensed)
+
+    Usage:
+      apptainer run <image.sif> [pyrodigal_options]
+
+    Basic examples:
+      # Predict genes in a FASTA file
+      apptainer run pyrodigal.sif -i input.fasta -o output.gbk
+
+      # Output in GFF3 format for metagenomic contigs
+      apptainer run pyrodigal.sif -i contigs.fasta -f gff -o output.gff
+
+      # Metagenomic mode (predict from metagenomic assemblies)
+      apptainer run pyrodigal.sif -i metagenome.fasta -p meta -o output.gbk
+
+    For detailed usage and available options, execute:
+      apptainer exec <image.sif> pyrodigal --help
+
+    This container is part of the Peterson Lab Bioinformatics Scaffold (PLBS)
+    designed for reproducible and traceable bioinformatics analyses.
