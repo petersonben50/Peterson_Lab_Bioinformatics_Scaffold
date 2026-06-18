@@ -1,0 +1,380 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Peterson Lab Raw Metagenome Reads Metadata Schema",
+    "description": "Schema for the initial metadata file of raw metagenome sequencing data within the Peterson Lab Bioinformatics Scaffold.",
+    "type": "object",
+    "properties": {
+      "productType": {
+        "type": "string",
+        "description": "A descriptive string identifying the type of data product this metadata file describes.",
+        "const": "Peterson Lab Bioinformatics Scaffold - Raw Metagenome Reads Metadata"
+      },
+      "schemaVersion": {
+        "type": "string",
+        "description": "The version of this JSON schema.",
+        "pattern": "^\\d+\\.\\d+$"
+      },
+      "dataSteward": {
+        "type": "string",
+        "description": "The name of the individual responsible for the accuracy and maintenance of this metadata record."
+      },
+      "metagenomeID": {
+        "type": "string",
+        "description": "The Peterson Lab's unique internal identifier for the metagenome sample. Follows the format: MG_<subsiteID>_<YYYYMMDD>_<depth>_<unique_4_digit_number>."
+      },
+      "dateRecordCreated": {
+        "type": "string",
+        "description": "The date (YYYY-MM-DD) when this specific JSON metadata record was initially generated.",
+        "format": "date"
+      },
+      "provenanceNotes": {
+        "type": "string",
+        "description": "A brief, high-level note documenting the creation context of this metadata record."
+      },
+      "rawSequencingFiles": {
+        "type": "array",
+        "description": "Detailed information for each individual raw sequencing file associated with the metagenome sample.",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "properties": {
+            "fileName": {
+              "type": "string",
+              "description": "The exact name of the raw sequencing file (as stored on the server)."
+            },
+            "originalName": {
+              "type": "string",
+              "description": "The original filename of the sequencing file as provided by the sequencing facility or external source."
+            },
+            "checksum": {
+              "type": "string",
+              "description": "The MD5 checksum of the file.",
+              "pattern": "^[0-9a-fA-F]{32}$"
+            },
+            "fileSizeBytes": {
+              "type": "string",
+              "description": "The size of the raw sequencing file in bytes.",
+              "pattern": "^\\d+(\\.\\d+)?[GMK]?$"
+            },
+            "numberOfReads": {
+              "type": "integer",
+              "description": "The total number of sequencing reads contained within the file.",
+              "minimum": 0
+            },
+            "readPair": {
+              "type": "integer",
+              "description": "For paired-end sequencing, indicates if the file contains Read 1 (1) or Read 2 (2).",
+              "enum": [1, 2]
+            }
+          },
+          "required": [
+            "fileName",
+            "checksum",
+            "fileSizeBytes",
+            "numberOfReads",
+            "readPair"
+          ]
+        }
+      },
+      "storageInformation": {
+        "type": "array",
+        "description": "Details about where the raw sequencing data is publicly or internally stored.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "accessionType": {
+              "type": "string",
+              "description": "The type of accession or storage service (e.g., NCBI, ENA, Local NAS)."
+            },
+            "accessionID": {
+              "type": "string",
+              "description": "The specific identifier associated with the accessionType (e.g., SRR ID, BioSample ID)."
+            },
+            "url": {
+              "type": "string",
+              "description": "A direct URL link to the accession or storage location.",
+              "format": "uri"
+            }
+          },
+          "required": [
+            "accessionType",
+            "accessionID",
+            "url"
+          ]
+        }
+      },
+      "nucleicAcidSequencingInformation": {
+        "type": "object",
+        "description": "Comprehensive details about the nucleic acid sequencing experiment.",
+        "properties": {
+          "sequencingID": {
+            "type": "string",
+            "description": "An identifier for the specific sequencing run or project, as provided by the sequencing facility."
+          },
+          "dateOfSubmission": {
+            "type": "string",
+            "description": "The date (YYYY-MM-DD) when the sample was submitted for sequencing.",
+            "format": "date"
+          },
+          "sequencingPrepNotes": {
+            "type": "string",
+            "description": "Any notes regarding the preparation of the sample for sequencing submission."
+          },
+          "sequencingInformation": {
+            "type": "object",
+            "description": "Detailed parameters of the sequencing run itself.",
+            "properties": {
+              "sequencingLocation": {
+                "type": "string",
+                "description": "The name of the facility or lab where sequencing took place."
+              },
+              "libraryPrepKit": {
+                "type": "string",
+                "description": "The name and version of the library preparation kit used."
+              },
+              "sequencingType": {
+                "type": ["string", "null"],
+                "description": "The broad category of sequencing (e.g., Shotgun Metagenomics)."
+              },
+              "sequencingInstrument": {
+                "type": "string",
+                "description": "The specific instrument model used for sequencing."
+              },
+              "sequencingChemistry": {
+                "type": "string",
+                "description": "The version or type of sequencing chemistry used."
+              },
+              "sequencingLengthRequest": {
+                "type": "string",
+                "description": "The requested sequencing type and read length (e.g., '150 bp paired-end')."
+              },
+              "sequencingReadsRequest": {
+                "type": "integer",
+                "description": "The requested number of raw sequencing reads (e.g., 20000000 for 20M reads).",
+                "minimum": 0
+              },
+              "insertSizeRequest": {
+                "type": "integer",
+                "description": "The requested or target insert size for the library preparation, in base pairs.",
+                "minimum": 0
+              },
+              "sequencingNotes": {
+                "type": ["string", "null"],
+                "description": "Any additional free-text notes related to the sequencing process."
+              }
+            },
+            "required": [
+              "sequencingLocation",
+              "libraryPrepKit",
+              "sequencingType",
+              "sequencingInstrument",
+              "sequencingChemistry",
+              "sequencingLengthRequest",
+              "sequencingReadsRequest",
+              "insertSizeRequest",
+              "sequencingNotes"
+            ]
+          }
+        },
+        "required": [
+          "sequencingID",
+          "dateOfSubmission",
+          "sequencingInformation"
+        ]
+      },
+      "nucleicAcidExtractionInformation": {
+        "type": "object",
+        "description": "Details about the process of extracting nucleic acids from the raw sample.",
+        "properties": {
+          "extractionID": {
+            "type": "string",
+            "description": "An internal identifier for the specific extraction batch or process."
+          },
+          "extractionType": {
+            "type": "string",
+            "description": "The type of nucleic acid extracted (e.g., DNA, RNA)."
+          },
+          "extractionDate": {
+            "type": "string",
+            "description": "The date (YYYY-MM-DD) when the nucleic acid extraction was performed.",
+            "format": "date"
+          },
+          "extractionMethod": {
+            "type": "string",
+            "description": "A high-level description of the extraction method used."
+          },
+          "extractionSOP": {
+            "type": "string",
+            "description": "The title and version of the Standard Operating Procedure (SOP) document used for the extraction."
+          },
+          "internalSpike": {
+            "type": "object",
+            "description": "Details about any internal spike-in controls used during extraction.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "The type of internal spike, e.g., 'none', 'PhiX', 'internal_standard_name'."
+              }
+            },
+            "required": ["type"]
+          },
+          "qualityMetrics": {
+            "type": "array",
+            "description": "An array containing key quality control metrics for the extracted nucleic acid.",
+            "items": {
+              "type": "object",
+              "description": "A single quality metric entry.",
+              "properties": {
+                "dnaConcentrationMethod": {
+                  "type": "string",
+                  "description": "The method used to measure DNA concentration (e.g., Qubit, NanoDrop)."
+                },
+                "dnaConcentrationValue": {
+                  "type": "number",
+                  "description": "The measured DNA concentration value.",
+                  "minimum": 0
+                },
+                "dnaConcentrationUnit": {
+                  "type": "string",
+                  "description": "The unit of DNA concentration (e.g., µg/ml, ng/µl)."
+                }
+              },
+              "required": [
+                "dnaConcentrationMethod",
+                "dnaConcentrationValue",
+                "dnaConcentrationUnit"
+              ]
+            },
+            "minItems": 0
+          }
+        },
+        "required": [
+          "extractionID",
+          "extractionType",
+          "extractionDate",
+          "extractionMethod",
+          "extractionSOP",
+          "internalSpike",
+          "qualityMetrics"
+        ]
+      },
+      "environmentalSamplingMetadata": {
+        "type": "object",
+        "description": "Comprehensive information about the environmental context and collection of the sample.",
+        "properties": {
+          "ecosystemID": {
+            "type": "string",
+            "description": "A unique identifier for the broader ecosystem type or project."
+          },
+          "ecosystemName": {
+            "type": "string",
+            "description": "A descriptive name for the broader ecosystem."
+          },
+          "siteID": {
+            "type": "string",
+            "description": "A unique identifier for the specific sampling site within the ecosystem."
+          },
+          "siteName": {
+            "type": "string",
+            "description": "A descriptive name for the specific sampling site."
+          },
+          "subsiteID": {
+            "type": "string",
+            "description": "A unique identifier for a more granular location within the site."
+          },
+          "subsiteName": {
+            "type": "string",
+            "description": "A descriptive name for the more granular subsite."
+          },
+          "subsiteLatitude": {
+            "type": "number",
+            "description": "The latitude of the sampling subsite in decimal degrees (WGS84 assumed)."
+          },
+          "subsiteLongitude": {
+            "type": "number",
+            "description": "The longitude of the sampling subsite in decimal degrees (WGS84 assumed)."
+          },
+          "depth": {
+            "type": "number",
+            "description": "The depth of sample collection."
+          },
+          "depthDefinition": {
+            "type": "string",
+            "description": "The unit and context of the depth (e.g., 'm', 'cm_from_surface', 'mbsf')."
+          },
+          "date": {
+            "type": "string",
+            "description": "The date (YYYY-MM-DD) when the sample was collected.",
+            "format": "date"
+          },
+          "time": {
+            "type": "string",
+            "description": "The time (HH:MM or HH:MM:SS) when the sample was collected, typically in 24-hour format.",
+            "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)(:([0-5]\\d))?$"
+          },
+          "collectionMethod": {
+            "type": "string",
+            "description": "The method or equipment used to collect the sample."
+          },
+          "containerID": {
+            "type": "string",
+            "description": "An internal identifier for the container the raw sample was stored in upon collection."
+          },
+          "preservationMethod": {
+            "type": ["string", "null"],
+            "description": "The method used to preserve the sample immediately after collection."
+          },
+          "collectionNotes": {
+            "type": ["string", "null"],
+            "description": "Any additional free-text notes related to the sample collection event."
+          },
+          "containerNotes": {
+            "type": ["string", "null"],
+            "description": "Any additional free-text notes related to the sample container or its contents immediately after collection."
+          },
+          "quantityOfSample": {
+            "type": ["string", "number", "null"],
+            "description": "The approximate quantity of the raw sample collected. Can be a number or 'NA' if not applicable."
+          },
+          "quantityUnit": {
+            "type": ["string", "null"],
+            "description": "The unit of measurement for the quantityOfSample (e.g., 'ml', 'grams')."
+          }
+        },
+        "required": [
+          "ecosystemID",
+          "ecosystemName",
+          "siteID",
+          "siteName",
+          "subsiteID",
+          "subsiteName",
+          "subsiteLatitude",
+          "subsiteLongitude",
+          "depth",
+          "depthDefinition",
+          "date",
+          "time",
+          "collectionMethod",
+          "containerID",
+          "preservationMethod",
+          "collectionNotes",
+          "containerNotes",
+          "quantityOfSample",
+          "quantityUnit"
+        ]
+      }
+    },
+    "required": [
+      "productType",
+      "schemaVersion",
+      "dataSteward",
+      "metagenomeID",
+      "dateRecordCreated",
+      "provenanceNotes",
+      "rawSequencingFiles",
+      "storageInformation",
+      "nucleicAcidSequencingInformation",
+      "nucleicAcidExtractionInformation",
+      "environmentalSamplingMetadata"
+    ]
+  }
