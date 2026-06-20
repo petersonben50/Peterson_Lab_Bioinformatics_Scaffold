@@ -1,0 +1,132 @@
+Bootstrap: docker
+From: condaforge/miniforge3:25.3.0-3 # Using AlmaLinux 9, a stable RHEL clone
+
+%environment
+    # We explicitly set CONDA_HOME to ensure its bin is in PATH for clarity
+    export CONDA_HOME="/opt/conda" # Default install path for miniforge/miniconda images
+    export PATH="${CONDA_HOME}/bin:$PATH"
+    # Set LANG and LC_ALL to avoid locale warnings in some environments
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    export PATH="/opt/conda/envs/hmmer_env/bin/:$PATH"
+
+%post
+    echo "--- Starting Apptainer build post-processing ---"
+
+    # Conda is already installed. Initialize base environment.
+    # The `eval` is crucial for conda commands to be recognized
+    eval "$(conda shell.bash hook)"
+    
+    # Activate base env if not already, to ensure `conda` commands work
+    conda activate base
+
+    echo "Creating and installing HMMER environment..."
+    # Install HMMER for profile hidden Markov model (HMM) sequence analysis.
+    # Use mamba for faster dependency resolution.
+    conda create -n hmmer_env -y hmmer=3.4 mamba -c bioconda -c conda-forge
+
+    echo "Cleaning Conda cache to reduce container size..."
+    conda clean --all -f -y
+
+    echo "--- Apptainer build post-processing complete ---"
+
+%files
+    # This section is currently empty.
+    # Files added here would be copied from the host into the container.
+    # Example: /path/to/host/script.sh /opt/container/script.sh
+
+%runscript
+    # This wrapper script ensures the HMMER Conda environment is properly activated
+    # before executing an HMMER command.
+    # It checks for conda.sh to ensure robustness.
+    if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
+        . "${CONDA_HOME}/etc/profile.d/conda.sh"
+    else
+        echo "Error: conda.sh not found. Conda environment might not be correctly set up."
+        exit 1
+    fi
+
+    # Activate the HMMER environment
+    conda activate hmmer_env
+
+    # This container supports multiple HMMER tools. Require a command.
+    if [ "$#" -eq 0 ]; then
+        echo "This container includes HMMER 3.4 tools (e.g., hmmsearch, hmmscan, hmmbuild)."
+        echo "Please specify a command to run, e.g., 'hmmsearch' or 'hmmscan'."
+        echo "For help, use 'apptainer exec <image.sif> <command> -h'."
+        exit 1
+    fi
+
+    # Execute the specified command with all arguments.
+    exec "$@"
+
+%test
+    echo "--- Starting Apptainer container tests ---"
+    # Ensure conda is initialized to activate the environment
+    if [ -f "${CONDA_HOME}/etc/profile.d/conda.sh" ]; then
+        . "${CONDA_HOME}/etc/profile.d/conda.sh"
+    else
+        echo "Error: conda.sh not found. Conda environment might not be correctly set up for testing."
+        exit 1
+    fi
+
+    # Activate the HMMER environment for testing
+    conda activate hmmer_env
+
+    # Test that key HMMER tools can be found and execute.
+    echo "Running hmmsearch -h test..."
+    if hmmsearch -h &> /dev/null; then
+        echo "hmmsearch -h command successful."
+    else
+        echo "Error: hmmsearch -h command failed."
+        exit 1
+    fi
+
+    echo "Running hmmscan -h test..."
+    if hmmscan -h &> /dev/null; then
+        echo "hmmscan -h command successful."
+    else
+        echo "Error: hmmscan -h command failed."
+        exit 1
+    fi
+
+    echo "--- Apptainer container tests complete ---"
+
+%labels
+    Maintainer "Ben Peterson <petersob@uwm.edu>"
+    Version "3.4" # Matches the HMMER version installed
+    ReleaseDate "2026-06-19" # Current date
+    License "BSD-3-Clause"
+    Description "Peterson Lab Bioinformatic Scaffold - Apptainer container for HMMER 3.4, a suite for profile hidden Markov model (HMM) based sequence analysis."
+    Homepage "http://hmmer.org/"
+    Source "https://github.com/petersonben50/Peterson_Lab_Bioinformatics_Scaffold/blob/main/containers/hmmer.def" # Placeholder, update with actual path
+
+%help
+    This container encapsulates HMMER 3.4 for profile hidden Markov model
+    (HMM) based sequence analysis of proteins and nucleic acids.
+
+    Key features:
+    - Profile HMM database searching with hmmsearch
+    - Sequence-to-HMM searching with hmmscan
+    - Profile construction with hmmbuild
+    - HMM database preparation with hmmpress
+    - HMM profile alignment and sequence generation with hmmalign/hmmemit
+
+    Usage:
+      apptainer run <image.sif> <hmmer_command> [command_options]
+
+    Basic examples:
+      # Search sequences against an HMM profile database
+      apptainer run hmmer.sif hmmsearch profiles.hmm proteins.faa
+
+      # Scan a sequence file against an HMM database
+      apptainer run hmmer.sif hmmscan --tblout hits.tbl profiles.hmm proteins.faa
+
+      # Build an HMM profile from a multiple sequence alignment
+      apptainer run hmmer.sif hmmbuild model.hmm alignment.sto
+
+    For detailed usage and available options, execute:
+      apptainer exec <image.sif> <hmmer_command> -h
+
+    This container is part of the Peterson Lab Bioinformatics Scaffold (PLBS)
+    designed for reproducible and traceable bioinformatics analyses.
