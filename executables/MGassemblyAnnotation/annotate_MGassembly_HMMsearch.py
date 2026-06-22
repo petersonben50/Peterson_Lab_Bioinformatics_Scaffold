@@ -142,8 +142,6 @@ def run_hmmsearch(
     hmm_model: str,
     input_orf_files: list,
     output_dir: str,
-    hmmer_container: str,
-    apptainer_bin: str,
     evalue_cutoff: float = None,
     cut_tc: bool = False,
     cut_ga: bool = False,
@@ -164,9 +162,6 @@ def run_hmmsearch(
     """
     if not os.path.exists(hmm_model):
         logger.error(f"Error: HMM model file does not exist: {hmm_model}")
-        sys.exit(1)
-    if not os.path.exists(hmmer_container):
-        logger.error(f"Error: Container image does not exist: {hmmer_container}")
         sys.exit(1)
     if not input_orf_files:
         logger.error("Error: At least one ORF amino acid input file is required.")
@@ -195,9 +190,6 @@ def run_hmmsearch(
         needs_domtblout = keep_domtblout or min_hmm_coverage is not None or min_target_coverage is not None
 
         cmd = [
-            apptainer_bin,
-            "exec",
-            hmmer_container,
             "hmmsearch",
             "--cpu",
             str(cpu),
@@ -239,8 +231,8 @@ def run_hmmsearch(
             sys.exit(e.returncode)
         except FileNotFoundError:
             logger.error(
-                "Error: apptainer or hmmsearch command not found. "
-                "Ensure Apptainer is installed and the hmmer.sif image is accessible."
+                "Error: hmmsearch command not found. "
+                "Ensure HMMER is installed and available in PATH (e.g., via apptainer exec)."
             )
             sys.exit(1)
         except Exception as e:
@@ -268,7 +260,7 @@ def run_hmmsearch(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Wrapper script for HMM-based ORF annotation using hmmsearch in an Apptainer container.",
+        description="Wrapper script for HMM-based ORF annotation using hmmsearch (expects hmmsearch in PATH).",
         formatter_class=argparse.RawTextHelpFormatter,
     )
 
@@ -289,18 +281,6 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         required=True,
         help="Output directory for hmmsearch results and extracted hit sequences. Required.",
-    )
-    parser.add_argument(
-        "--hmmer-container",
-        type=str,
-        default="hmmer.sif",
-        help="Path to hmmer Apptainer image (.sif). Default: hmmer.sif",
-    )
-    parser.add_argument(
-        "--apptainer-bin",
-        type=str,
-        default="apptainer",
-        help="Apptainer executable name/path. Default: apptainer",
     )
     parser.add_argument(
         "--cpu",
@@ -411,8 +391,6 @@ def main():
         hmm_model=args.hmm_model,
         input_orf_files=args.input_aa_orfs,
         output_dir=args.output_dir,
-        hmmer_container=args.hmmer_container,
-        apptainer_bin=args.apptainer_bin,
         evalue_cutoff=args.evalue_cutoff,
         cut_tc=args.cut_tc,
         cut_ga=args.cut_ga,
